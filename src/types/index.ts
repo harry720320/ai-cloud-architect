@@ -62,3 +62,14 @@ export interface DiscoverySession {
   generatedAnswers: Record<string, string>;
 }
 
+export type UserRole = 'admin' | 'user';
+
+export interface User {
+  id: string;
+  username: string;
+  passwordHash?: string; // Optional for API responses
+  role: UserRole;
+  created_at: string;
+  updated_at?: string;
+}
+

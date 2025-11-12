@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useConfigStore, defaultPrompts } from '../store/configStore';
 import { anythingLLMApi } from '../lib/api';
+import { discoveryApi } from '../lib/backendApi';
 import { Loader2, CheckCircle, ArrowRight, Save, Download, AlertTriangle } from 'lucide-react';
-import { cn, generateId } from '../lib/utils';
-import type { Product, DiscoveryResult, DiscoveryQuestion } from '../types';
+import type { Product, DiscoveryQuestion } from '../types';
 
 export default function CustomerDiscovery() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -14,8 +14,15 @@ export default function CustomerDiscovery() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [loadingQuestions, setLoadingQuestions] = useState<Record<string, boolean>>({});
-  const { config } = useConfigStore();
-  const prompts = config.prompts || defaultPrompts;
+  const { config, isLoading: configLoading, loadConfig } = useConfigStore();
+  const prompts = config?.prompts || defaultPrompts;
+
+  // Load config on mount if not loaded
+  useEffect(() => {
+    if (!config && !configLoading) {
+      loadConfig();
+    }
+  }, [config, configLoading, loadConfig]);
 
   const getPromptForCategory = (category: string) => {
     if (/matrix/i.test(category)) {
@@ -44,7 +51,7 @@ export default function CustomerDiscovery() {
   };
 
   const handleProductSelect = (productId: string) => {
-    const product = config.products.find((p) => p.id === productId);
+    const product = config?.products.find((p) => p.id === productId);
     setSelectedProduct(product || null);
     setAnswers({});
     setResults({});
@@ -102,7 +109,7 @@ export default function CustomerDiscovery() {
   };
 
   const generateAnswerForQuestion = async (question: DiscoveryQuestion, answer: string) => {
-    const categoryMapping = config.categoryMappings.find(
+    const categoryMapping = config?.categoryMappings.find(
       (m) => m.category === question.category
     );
 
@@ -194,53 +201,47 @@ export default function CustomerDiscovery() {
 
   const allAnswered = selectedProduct?.questions.every((q) => answers[q.id]) ?? false;
 
-  const handleSaveDiscoveryResults = () => {
+  const handleSaveDiscoveryResults = async () => {
     if (!selectedProduct || !customerName.trim() || !projectName.trim()) {
       alert('Please fill in Customer Name and Project Name before saving.');
       return;
     }
 
-    const discoveryResult: DiscoveryResult = {
-      id: generateId(),
-      customerName: customerName.trim(),
-      projectName: projectName.trim(),
-      productId: selectedProduct.id,
-      productName: selectedProduct.name,
-      timestamp: new Date().toISOString(),
-      answers: { ...answers },
-    };
-
-    // Save to localStorage
-    const savedResults = JSON.parse(localStorage.getItem('discovery-results') || '[]');
-    savedResults.push(discoveryResult);
-    localStorage.setItem('discovery-results', JSON.stringify(savedResults));
-
-    alert('Discovery results saved successfully!');
+    try {
+      await discoveryApi.createDiscoveryResult({
+        customerName: customerName.trim(),
+        projectName: projectName.trim(),
+        productId: selectedProduct.id,
+        productName: selectedProduct.name,
+        answers: { ...answers },
+      });
+      alert('Discovery results saved successfully!');
+    } catch (error) {
+      console.error('Failed to save discovery results:', error);
+      alert(error instanceof Error ? error.message : 'Failed to save discovery results');
+    }
   };
 
-  const handleSaveGeneratedAnswers = () => {
+  const handleSaveGeneratedAnswers = async () => {
     if (!selectedProduct || !customerName.trim() || !projectName.trim() || Object.keys(results).length === 0) {
       alert('Please generate answers first before saving.');
       return;
     }
 
-    const discoveryResult: DiscoveryResult = {
-      id: generateId(),
-      customerName: customerName.trim(),
-      projectName: projectName.trim(),
-      productId: selectedProduct.id,
-      productName: selectedProduct.name,
-      timestamp: new Date().toISOString(),
-      answers: { ...answers },
-      generatedAnswers: { ...results },
-    };
-
-    // Save to localStorage
-    const savedResults = JSON.parse(localStorage.getItem('generated-answers') || '[]');
-    savedResults.push(discoveryResult);
-    localStorage.setItem('generated-answers', JSON.stringify(savedResults));
-
-    alert('Generated answers saved successfully!');
+    try {
+      await discoveryApi.createDiscoveryResult({
+        customerName: customerName.trim(),
+        projectName: projectName.trim(),
+        productId: selectedProduct.id,
+        productName: selectedProduct.name,
+        answers: { ...answers },
+        generatedAnswers: { ...results },
+      });
+      alert('Generated answers saved successfully!');
+    } catch (error) {
+      console.error('Failed to save generated answers:', error);
+      alert(error instanceof Error ? error.message : 'Failed to save generated answers');
+    }
   };
 
   const handleExportDiscoveryResults = () => {
@@ -301,6 +302,19 @@ export default function CustomerDiscovery() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  // Show loading state while config is being loaded
+  if (configLoading || !config) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Customer Discovery</h2>
+        <div className="flex items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
+          <Loader2 className="h-8 w-8 animate-spin text-primary-500 mr-3" />
+          <span className="text-gray-600">Loading configuration...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -386,14 +400,18 @@ export default function CustomerDiscovery() {
                         />
                       </div>
                       {hasGeneratedResult && !isQuestionLoading && !isErrorResult && (
-                        <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" title="Answer generated" />
+                        <div className="flex-shrink-0" title="Answer generated">
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        </div>
                       )}
                     </div>
                     <div className="flex items-center justify-between text-xs text-gray-500">
                       <span>Category: {question.category}</span>
                       <div className="flex items-center gap-2">
                         {hasGeneratedResult && !isQuestionLoading && isErrorResult && (
-                          <AlertTriangle className="h-4 w-4 text-amber-500" title="Generation returned a warning" />
+                          <div className="flex items-center" title="Generation returned a warning">
+                            <AlertTriangle className="h-4 w-4 text-amber-500" />
+                          </div>
                         )}
                         <button
                         type="button"

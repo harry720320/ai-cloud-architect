@@ -14,11 +14,16 @@ cloud-architect-on-anythingllm/
 │   ├── pages/                   # Page Components
 │   │   ├── KnowledgebaseSearch.tsx    # Knowledge base search page
 │   │   ├── CustomerDiscovery.tsx      # Customer discovery page
-│   │   └── Settings.tsx               # Settings page
+│   │   ├── DiscoveryResults.tsx       # Discovery results page
+│   │   ├── Settings.tsx               # Settings page
+│   │   └── Login.tsx                  # Login page
 │   ├── lib/                     # Utility Libraries
 │   │   ├── api.ts              # AnythingLLM API integration
+│   │   ├── backendApi.ts       # Backend API client
+│   │   ├── security.ts         # Security utilities (password hashing)
 │   │   └── utils.ts            # Utility functions
 │   ├── store/                   # State Management
+│   │   ├── authStore.ts        # Authentication store
 │   │   └── configStore.ts      # Zustand configuration store
 │   ├── types/                   # TypeScript Types
 │   │   └── index.ts            # Type definitions
@@ -26,10 +31,29 @@ cloud-architect-on-anythingllm/
 │   ├── main.tsx                 # Application entry point
 │   ├── index.css                # Global styles
 │   └── vite-env.d.ts            # Vite environment types
+├── server/                      # Backend server
+│   ├── routes/                  # API routes
+│   │   ├── auth.js             # Authentication routes
+│   │   ├── config.js           # Configuration routes
+│   │   └── discovery.js        # Discovery results routes
+│   ├── middleware/             # Express middleware
+│   │   └── auth.js             # Authentication middleware
+│   ├── database.js             # Database helpers (JSON file storage)
+│   ├── index.js                # Server entry point
+│   ├── package.json            # Backend dependencies
+│   ├── README.md               # Backend documentation
+│   └── data/                   # JSON data files (created at runtime)
+│       ├── users.json
+│       ├── category-mappings.json
+│       ├── products.json
+│       ├── discovery-questions.json
+│       ├── prompts.json
+│       └── discovery-results.json
 ├── .env.example                 # Environment variables example
 ├── .eslintrc.cjs                # ESLint configuration
 ├── .eslintignore                # ESLint ignore file
 ├── .gitignore                   # Git ignore file
+├── BACKEND_SETUP.md             # Backend setup guide
 ├── index.html                   # HTML entry
 ├── package.json                 # Project dependencies
 ├── postcss.config.js            # PostCSS configuration
@@ -76,33 +100,57 @@ cloud-architect-on-anythingllm/
 - Batch AI response generation
 - Results display interface
 
-### 3. Settings (Settings)
+### 3. Discovery Results (Discovery Results)
+**File**: `src/pages/DiscoveryResults.tsx`
+
+**Features**:
+- View all historical discovery results
+- View detailed results including questions and answers
+- Delete discovery results
+- Export discovery results as JSON files
+
+**Key Characteristics**:
+- List view with customer name, project name, and product name
+- Detail modal with full question and answer display
+- Export functionality for answers and generated answers
+- Delete confirmation dialog
+
+### 4. Settings (Settings)
 **File**: `src/pages/Settings.tsx`
 
 **Features**:
-- Question category mapping management
-- Product discovery list creation and management
+- **User Settings**: Change password and manage users (admin only)
+- **Question Category Mappings**: Define mappings between categories and workspaces
+- **Product Discovery Lists**: Create and manage discovery question lists
+- **Prompt Settings**: Configure prompts for General, Sizing, and Matrix categories
 - Edit existing configurations
 - Delete configuration items
 
 **Key Characteristics**:
-- Dual-tab interface (mappings vs products)
+- Four-tab interface (User Settings, Question Category Mappings, Product Discovery Lists, Prompt Settings)
+- Workspace fetching from AnythingLLM
 - Product editing mode
 - Dynamic question addition/deletion
-- Local persistent storage
+- Backend persistent storage
+- User management (admin only)
 
 ## 🔧 Technical Implementation
 
 ### State Management
 - **Zustand** lightweight state management
-- Configuration data stored in localStorage
+- **authStore**: Authentication state and user management
+- **configStore**: Configuration data (category mappings, products, prompts)
+- Backend API integration for data persistence
 - Real-time UI state synchronization
 
 ### API Integration
 - **Axios** HTTP client
-- AnythingLLM REST API integration
-- API Key authentication support
+- **AnythingLLM REST API**: Integration for knowledge base search
+- **Backend API**: Custom backend for user management, configuration, and discovery results
+- JWT authentication for backend API
+- API Key authentication support for AnythingLLM
 - Error handling and retry mechanism
+- CORS support for cross-origin requests
 
 ### Styling System
 - **Tailwind CSS** atomic styling
@@ -119,7 +167,17 @@ cloud-architect-on-anythingllm/
 
 ### Configuration Storage Flow
 ```
-Settings → configStore → localStorage → All Pages
+Settings → configStore → Backend API → JSON Files → All Pages
+```
+
+### Authentication Flow
+```
+Login → Backend API → JWT Token → localStorage → Protected Routes
+```
+
+### Discovery Results Flow
+```
+Customer Discovery → Save Results → Backend API → JSON Files → Discovery Results Page
 ```
 
 ### Knowledge Base Search Flow

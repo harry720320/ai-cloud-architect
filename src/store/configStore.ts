@@ -1,18 +1,20 @@
 import { create } from 'zustand';
+import { configApi } from '../lib/backendApi';
 import type { Config, QuestionCategoryMapping, Product, PromptSettings } from '../types';
 
 interface ConfigState {
-  config: Config;
+  config: Config | null;
+  isLoading: boolean;
+  error: string | null;
   setCategoryMappings: (mappings: QuestionCategoryMapping[]) => void;
   setProducts: (products: Product[]) => void;
-  addCategoryMapping: (mapping: QuestionCategoryMapping) => void;
-  removeCategoryMapping: (category: string) => void;
-  addProduct: (product: Product) => void;
-  updateProduct: (productId: string, product: Product) => void;
-  deleteProduct: (productId: string) => void;
-  loadConfig: () => void;
-  saveConfig: () => void;
-  updatePrompts: (prompts: PromptSettings) => void;
+  addCategoryMapping: (mapping: QuestionCategoryMapping) => Promise<void>;
+  removeCategoryMapping: (category: string) => Promise<void>;
+  addProduct: (product: Product) => Promise<void>;
+  updateProduct: (productId: string, product: Product) => Promise<void>;
+  deleteProduct: (productId: string) => Promise<void>;
+  loadConfig: (force?: boolean) => Promise<void>;
+  updatePrompts: (prompts: PromptSettings) => Promise<void>;
 }
 
 export const defaultPrompts: PromptSettings = {
@@ -28,98 +30,182 @@ const defaultConfig: Config = {
 };
 
 export const useConfigStore = create<ConfigState>((set, get) => ({
-  config: defaultConfig,
+  config: null,
+  isLoading: false,
+  error: null,
 
-  loadConfig: () => {
+  loadConfig: async (force = false) => {
+    // Don't reload if already loading
+    if (get().isLoading) return;
+    
+    // If config already exists and not forcing, don't reload
+    if (!force && get().config) return;
+    
+    set({ isLoading: true, error: null });
+    
     try {
-      const stored = localStorage.getItem('cloud-architect-config');
-      if (stored) {
-        const config = JSON.parse(stored);
-        config.prompts = {
-          ...defaultPrompts,
-          ...(config.prompts || {}),
+      // Check if we have a token before making API calls
+      const token = localStorage.getItem('auth-token');
+      if (!token) {
+        // No token, set default config immediately
+        console.log('No auth token, using default config');
+        set({ config: { ...defaultConfig }, isLoading: false, error: null });
+        return;
+      }
+
+      // Try to load from API with timeout
+      try {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 5000)
+        );
+        
+        const apiPromise = Promise.all([
+          configApi.getCategoryMappings(),
+          configApi.getProducts(),
+          configApi.getPrompts(),
+        ]);
+        
+        const [mappings, products, prompts] = await Promise.race([
+          apiPromise,
+          timeoutPromise,
+        ]) as any[];
+
+        // Transform mappings from API format
+        const categoryMappings: QuestionCategoryMapping[] = (mappings || []).map((m: any) => ({
+          category: m.category,
+          workspaceName: m.workspace_name,
+        }));
+
+        // Transform products from API format
+        const transformedProducts: Product[] = (products || []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          questions: (p.questions || []).map((q: any) => ({
+            id: q.id,
+            question: q.question,
+            category: q.category,
+          })),
+        }));
+
+        const config: Config = {
+          categoryMappings,
+          products: transformedProducts,
+          prompts: prompts || defaultPrompts,
         };
-        set({ config });
-      }
-      else {
-        set({ config: { ...defaultConfig } });
-      }
-    } catch (error) {
-      console.error('Failed to load config:', error);
-    }
-  },
 
-  saveConfig: () => {
-    try {
-      localStorage.setItem('cloud-architect-config', JSON.stringify(get().config));
-    } catch (error) {
-      console.error('Failed to save config:', error);
+        set({ config, isLoading: false, error: null });
+      } catch (apiError: any) {
+        // Handle API errors - always use default config as fallback
+        console.error('Failed to load config from API:', apiError);
+        
+        // Check if it's a network error (no response)
+        if (!apiError.response) {
+          console.warn('Network error or backend server is down, using default config');
+          set({ config: { ...defaultConfig }, isLoading: false, error: null });
+          return;
+        }
+        
+        // If it's an auth error, clear token but still use default config
+        if (apiError.response?.status === 401 || apiError.response?.status === 403) {
+          console.warn('Authentication error, clearing token and using default config');
+          localStorage.removeItem('auth-token');
+          localStorage.removeItem('auth-user');
+          set({ config: { ...defaultConfig }, isLoading: false, error: null });
+          return;
+        }
+        
+        // For any other error, use default config
+        console.warn('API error, using default config:', apiError.response?.status);
+        set({ config: { ...defaultConfig }, isLoading: false, error: null });
+      }
+    } catch (error: any) {
+      // Fallback for any unexpected errors - always set default config
+      console.error('Unexpected error loading config:', error);
+      set({ config: { ...defaultConfig }, isLoading: false, error: null });
     }
   },
 
   setCategoryMappings: (mappings) => {
-    const config = get().config;
-    config.categoryMappings = mappings;
-    set({ config });
-    get().saveConfig();
+    const { config } = get();
+    if (config) {
+      config.categoryMappings = mappings;
+      set({ config });
+    }
   },
 
   setProducts: (products) => {
-    const config = get().config;
-    config.products = products;
-    set({ config });
-    get().saveConfig();
-  },
-
-  addCategoryMapping: (mapping) => {
-    const config = get().config;
-    // Remove existing mapping for this category
-    config.categoryMappings = config.categoryMappings.filter(
-      (m) => m.category !== mapping.category
-    );
-    config.categoryMappings.push(mapping);
-    set({ config });
-    get().saveConfig();
-  },
-
-  removeCategoryMapping: (category) => {
-    const config = get().config;
-    config.categoryMappings = config.categoryMappings.filter(
-      (m) => m.category !== category
-    );
-    set({ config });
-    get().saveConfig();
-  },
-
-  addProduct: (product) => {
-    const config = get().config;
-    config.products.push(product);
-    set({ config });
-    get().saveConfig();
-  },
-
-  updateProduct: (productId, product) => {
-    const config = get().config;
-    const index = config.products.findIndex((p) => p.id === productId);
-    if (index !== -1) {
-      config.products[index] = product;
+    const { config } = get();
+    if (config) {
+      config.products = products;
+      set({ config });
     }
-    set({ config });
-    get().saveConfig();
   },
 
-  deleteProduct: (productId) => {
-    const config = get().config;
-    config.products = config.products.filter((p) => p.id !== productId);
-    set({ config });
-    get().saveConfig();
+  addCategoryMapping: async (mapping) => {
+    try {
+      await configApi.createCategoryMapping(mapping.category, mapping.workspaceName);
+      // Force reload to get updated config
+      await get().loadConfig(true);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to add category mapping');
+    }
   },
 
-  updatePrompts: (prompts) => {
-    const config = get().config;
-    config.prompts = prompts;
-    set({ config });
-    get().saveConfig();
+  removeCategoryMapping: async (category) => {
+    try {
+      await configApi.deleteCategoryMapping(category);
+      // Force reload to get updated config
+      await get().loadConfig(true);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to remove category mapping');
+    }
+  },
+
+  addProduct: async (product) => {
+    try {
+      const questions = product.questions.map((q) => ({
+        question: q.question,
+        category: q.category,
+      }));
+      await configApi.createProduct(product.name, questions);
+      // Force reload to get updated config
+      await get().loadConfig(true);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to add product');
+    }
+  },
+
+  updateProduct: async (productId, product) => {
+    try {
+      const questions = product.questions.map((q) => ({
+        question: q.question,
+        category: q.category,
+      }));
+      await configApi.updateProduct(productId, product.name, questions);
+      // Force reload to get updated config
+      await get().loadConfig(true);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to update product');
+    }
+  },
+
+  deleteProduct: async (productId) => {
+    try {
+      await configApi.deleteProduct(productId);
+      // Force reload to get updated config
+      await get().loadConfig(true);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to delete product');
+    }
+  },
+
+  updatePrompts: async (prompts) => {
+    try {
+      await configApi.updatePrompts(prompts);
+      // Force reload to get updated config
+      await get().loadConfig(true);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to update prompts');
+    }
   },
 }));
-

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useConfigStore } from '../store/configStore';
+import { useConfigStore, defaultPrompts } from '../store/configStore';
 import { anythingLLMApi } from '../lib/api';
 import { Loader2, Send } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -9,10 +9,38 @@ export default function KnowledgebaseSearch() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { config } = useConfigStore();
+  const { config, isLoading: configLoading, loadConfig } = useConfigStore();
+
+  // Load config on mount if not loaded
+  useEffect(() => {
+    if (!config && !configLoading) {
+      loadConfig();
+    }
+  }, [config, configLoading, loadConfig]);
+
+  // Get categories from config (use default config if not loaded)
+  // Always ensure we have a config object, even if empty
+  const safeConfig = config || { categoryMappings: [], products: [], prompts: defaultPrompts };
+  const categoryMappings = safeConfig.categoryMappings || [];
+  const categories = categoryMappings.length > 0 
+    ? [...new Set(categoryMappings.map((m) => m.category))]
+    : [];
+
+  // Show loading state only if actively loading and no config yet
+  if (configLoading && !config) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Knowledgebase Search</h2>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+          <span className="ml-3 text-gray-600">Loading configuration...</span>
+        </div>
+      </div>
+    );
+  }
 
   const handleSend = async () => {
-    if (!message.trim() || !selectedCategory) return;
+    if (!message.trim() || !selectedCategory || !safeConfig) return;
 
     const userMessage = { role: 'user' as const, content: message };
     setMessages((prev) => [...prev, userMessage]);
@@ -20,7 +48,7 @@ export default function KnowledgebaseSearch() {
     setIsLoading(true);
 
     try {
-      const categoryMapping = config.categoryMappings.find(
+      const categoryMapping = safeConfig.categoryMappings.find(
         (m) => m.category === selectedCategory
       );
 
@@ -46,8 +74,6 @@ export default function KnowledgebaseSearch() {
     }
   };
 
-  const categories = ['Cloud General', ...new Set(config.categoryMappings.map((m) => m.category).filter(c => c !== 'Cloud General'))];
-
   return (
     <div className="max-w-4xl mx-auto">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Knowledgebase Search</h2>
@@ -65,14 +91,24 @@ export default function KnowledgebaseSearch() {
             setMessages([]);
           }}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          disabled={categories.length === 0}
         >
-          <option value="">Please select a question category</option>
+          <option value="">
+            {categories.length === 0 
+              ? 'No categories configured. Please go to Settings to add category mappings.' 
+              : 'Please select a question category'}
+          </option>
           {categories.map((category) => (
             <option key={category} value={category}>
               {category}
             </option>
           ))}
         </select>
+        {categories.length === 0 && (
+          <p className="mt-2 text-sm text-gray-500">
+            No question categories configured. Please go to <strong>Settings</strong> to add category mappings.
+          </p>
+        )}
       </div>
 
       {/* Chat Area */}
