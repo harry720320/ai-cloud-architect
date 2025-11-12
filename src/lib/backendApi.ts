@@ -1,6 +1,62 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002';
+/**
+ * Get API base URL based on runtime environment
+ * Priority:
+ * 1. VITE_API_BASE_URL environment variable (if set)
+ * 2. Runtime hostname detection:
+ *    - localhost/127.0.0.1 -> http://localhost:3002 (local development/preview)
+ *    - Production domain (cloud-ai.advantageinc.org) -> relative path (same origin, via ALB)
+ *    - Other -> http://localhost:3002 (fallback for development)
+ * 
+ * Note: This works for both `npm run dev` and `npm run build` in production,
+ * as it detects the actual runtime hostname rather than build mode.
+ */
+const getApiBaseUrl = () => {
+  // Priority 1: Use environment variable if explicitly set
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+  
+  // Priority 2: Detect based on runtime hostname (works for both dev and production)
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    
+    // Check if running on localhost (local development or preview)
+    const isLocalhost = hostname === 'localhost' || 
+                       hostname === '127.0.0.1' || 
+                       hostname === '' ||
+                       hostname === '::1';
+    
+    if (isLocalhost) {
+      // Local development or preview - use localhost backend
+      return 'http://localhost:3002';
+    }
+    
+    // Production domain (behind ALB) - use relative path
+    // This ensures API calls go through the same HTTPS domain
+    // Works for both npm run dev and npm run build in production
+    if (hostname === 'cloud-ai.advantageinc.org' || hostname.endsWith('.advantageinc.org')) {
+      return ''; // Empty string means relative path (same origin)
+    }
+    
+    // For other hostnames, check if using HTTPS
+    // If HTTPS, use relative path to avoid mixed content issues
+    if (protocol === 'https:') {
+      return ''; // Use relative path for HTTPS
+    }
+  }
+  
+  // Fallback: use localhost backend (for development)
+  return 'http://localhost:3002';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Log API base URL for debugging (always log to help with troubleshooting)
+console.log('API Base URL:', API_BASE_URL || '(relative path - same origin)');
 
 // Create axios instance with default config
 const api = axios.create({
