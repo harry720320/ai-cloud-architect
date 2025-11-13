@@ -3,6 +3,7 @@ import { useConfigStore, defaultPrompts } from '../store/configStore';
 import { anythingLLMApi } from '../lib/api';
 import { Loader2, Send } from 'lucide-react';
 import { cn } from '../lib/utils';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 export default function KnowledgebaseSearch() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -130,13 +131,19 @@ export default function KnowledgebaseSearch() {
               >
                 <div
                   className={cn(
-                    'max-w-[80%] rounded-lg px-4 py-2',
+                    'max-w-[80%] rounded-lg px-4 py-3',
                     msg.role === 'user'
                       ? 'bg-primary-500 text-white'
                       : 'bg-gray-100 text-gray-900'
                   )}
                 >
-                  {msg.content}
+                  {msg.role === 'user' ? (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  ) : msg.content.startsWith('❌ Error:') || msg.content.startsWith('⚠️') ? (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  ) : (
+                    <MarkdownRenderer content={msg.content} />
+                  )}
                 </div>
               </div>
             ))}

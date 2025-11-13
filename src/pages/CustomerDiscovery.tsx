@@ -4,6 +4,7 @@ import { anythingLLMApi } from '../lib/api';
 import { discoveryApi } from '../lib/backendApi';
 import { Loader2, CheckCircle, ArrowRight, Save, Download, AlertTriangle } from 'lucide-react';
 import type { Product, DiscoveryQuestion } from '../types';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 export default function CustomerDiscovery() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -511,14 +512,20 @@ export default function CustomerDiscovery() {
 
             return (
               <div key={question.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="mb-2">
-                  <h4 className="font-medium text-gray-900">{question.question}</h4>
-                  <div className="text-sm text-gray-500 mt-1">
-                    Answer: {answers[question.id]}
+                <div className="mb-4">
+                  <h4 className="font-medium text-gray-900 mb-2">{question.question}</h4>
+                  <div className="text-sm text-gray-500 mb-3">
+                    <span className="font-semibold">Customer Answer:</span> {answers[question.id]}
                   </div>
                 </div>
-                <div className="prose prose-sm max-w-none">
-                  <p className="text-gray-700 whitespace-pre-wrap">{result}</p>
+                <div className="border-t border-gray-200 pt-4">
+                  {result.startsWith('⚠️') ? (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <p className="text-amber-800 whitespace-pre-wrap">{result}</p>
+                    </div>
+                  ) : (
+                    <MarkdownRenderer content={result} />
+                  )}
                 </div>
               </div>
             );

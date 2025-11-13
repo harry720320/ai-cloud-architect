@@ -3,6 +3,7 @@ import { discoveryApi } from '../lib/backendApi';
 import { useConfigStore } from '../store/configStore';
 import { Trash2, Eye, Download, Loader2, Calendar, User, FolderOpen, Package } from 'lucide-react';
 import type { Product } from '../types';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 interface DiscoveryResultItem {
   id: string;
@@ -314,13 +315,27 @@ export default function DiscoveryResults() {
                 {selectedResult.generated_answers && Object.keys(selectedResult.generated_answers).length > 0 && (
                   <div>
                     <h4 className="text-lg font-semibold text-gray-900 mb-3">Generated Answers</h4>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {Object.entries(selectedResult.generated_answers).map(([questionId, answer]) => {
                         const questionText = getQuestionText(selectedResult.product_id, questionId);
+                        const customerAnswer = selectedResult.answers[questionId];
                         return (
                           <div key={questionId} className="border border-gray-200 rounded-lg p-4 bg-blue-50">
                             <p className="text-sm font-semibold text-gray-900 mb-2">{questionText}</p>
-                            <p className="text-gray-900 whitespace-pre-wrap bg-white p-3 rounded border border-gray-200">{answer}</p>
+                            {customerAnswer && (
+                              <div className="text-sm text-gray-600 mb-3">
+                                <span className="font-semibold">Customer Answer:</span> {customerAnswer}
+                              </div>
+                            )}
+                            <div className="border-t border-gray-200 pt-3 bg-white p-4 rounded border border-gray-200">
+                              {answer.startsWith('⚠️') ? (
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                  <p className="text-amber-800 whitespace-pre-wrap">{answer}</p>
+                                </div>
+                              ) : (
+                                <MarkdownRenderer content={answer} />
+                              )}
+                            </div>
                           </div>
                         );
                       })}

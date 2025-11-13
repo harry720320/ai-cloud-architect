@@ -4,8 +4,11 @@
 
 ### 📋 Documentation
 - [x] README.md - Updated with all features (Knowledgebase Search, Customer Discovery, Discovery Results, Settings)
+- [x] README.md - Updated with Markdown formatting features
 - [x] QUICKSTART.md - Updated with backend setup instructions
+- [x] QUICKSTART.md - Updated with Markdown rendering dependencies
 - [x] PROJECT_STRUCTURE.md - Updated with latest project structure
+- [x] PROJECT_STRUCTURE.md - Updated with MarkdownRenderer component
 - [x] BACKEND_SETUP.md - Backend setup guide
 - [x] server/README.md - Backend documentation
 - [x] LICENSE file - Created (MIT License)
@@ -24,10 +27,12 @@
 - [x] Frontend source code (src/)
 - [x] Backend source code (server/)
 - [x] All pages (KnowledgebaseSearch, CustomerDiscovery, DiscoveryResults, Settings, Login)
-- [x] All components (Layout)
+- [x] All components (Layout, MarkdownRenderer)
 - [x] All stores (authStore, configStore)
 - [x] All API clients (api.ts, backendApi.ts)
 - [x] Type definitions (types/index.ts)
+- [x] Markdown rendering component (MarkdownRenderer.tsx)
+- [x] Markdown styles (index.css)
 
 ### 🧪 Testing
 - [ ] Test frontend build: `npm run build`
@@ -51,6 +56,11 @@
 - [x] Frontend dependencies up to date
 - [x] Backend dependencies up to date
 - [x] @types/node added to devDependencies
+- [x] react-markdown added to dependencies
+- [x] remark-gfm added to dependencies
+- [x] rehype-highlight added to dependencies
+- [x] rehype-raw added to dependencies
+- [x] highlight.js added to dependencies
 - [ ] No known security vulnerabilities
 - [ ] All dependencies have compatible versions
 
@@ -94,9 +104,11 @@
 - Customer Discovery: Create discovery sessions with predefined questions
 - Discovery Results: View, manage, and export historical discovery results
 - Settings: Configure category mappings, products, prompts, and user management
+- **Markdown Formatting**: AI responses are automatically rendered with Markdown formatting (headings, lists, code blocks, tables, links)
 
 ## Technical Details
 - Frontend: React 18, TypeScript, Vite, Tailwind CSS
+- Frontend: react-markdown, remark-gfm, rehype-highlight, highlight.js (Markdown rendering)
 - Backend: Node.js, Express.js, JSON file storage
 - Authentication: JWT-based authentication
 - Database: JSON file storage (no compilation required)

@@ -8,12 +8,14 @@ An AI Cloud Architect application based on AnythingLLM backend knowledge base, p
 - Select question category to route to corresponding AnythingLLM workspace
 - Search and chat with specific knowledge bases
 - Support multiple question types: Cloud General, Product General, Product Sizing, etc.
+- **Formatted display**: AI responses are rendered with Markdown formatting, including headings, lists, code blocks, tables, and links
 
 ### 2. Customer Discovery
 - Display predefined question lists after selecting product type
 - Users fill in answers for questions
 - Automatically search corresponding workspace based on each question's category
 - Generate detailed answers and recommendations for each question
+- **Formatted display**: Generated answers are rendered with Markdown formatting, including headings, lists, code blocks, tables, and links
 - Save discovery results with customer name and project name
 - Export answers and generated answers separately
 
@@ -43,6 +45,10 @@ The Settings page has four tabs:
 - **React Router** - Routing
 - **Axios** - HTTP Client
 - **Lucide React** - Icon Library
+- **react-markdown** - Markdown rendering for formatted AI responses
+- **remark-gfm** - GitHub Flavored Markdown support
+- **rehype-highlight** - Code syntax highlighting
+- **highlight.js** - Code highlighting styles
 
 ### Backend
 - **Node.js** - Runtime Environment
@@ -163,6 +169,15 @@ npm run preview
 2. Select question category
 3. Enter your question and send
 4. Get AI responses from the corresponding workspace
+5. **Formatted display**: AI responses are automatically rendered with Markdown formatting, including:
+   - Headings (H1-H4)
+   - Lists (ordered and unordered)
+   - Code blocks with syntax highlighting
+   - Inline code
+   - Tables
+   - Links
+   - Bold and italic text
+   - Blockquotes
 
 ### Use Customer Discovery
 
@@ -172,7 +187,16 @@ npm run preview
 4. Fill in answers for all discovery questions
 5. Click "Generate Answers" to generate answers for all questions, or click individual "Generate" buttons for specific questions
 6. The system will generate detailed suggestions for each question based on your answers
-7. Save discovery results and export answers separately
+7. **Formatted display**: Generated answers are automatically rendered with Markdown formatting, including:
+   - Headings (H1-H4)
+   - Lists (ordered and unordered)
+   - Code blocks with syntax highlighting
+   - Inline code
+   - Tables
+   - Links
+   - Bold and italic text
+   - Blockquotes
+8. Save discovery results and export answers separately
 
 ### View Discovery Results
 
@@ -188,7 +212,8 @@ npm run preview
 .
 ├── src/                    # Frontend source code
 │   ├── components/         # Components
-│   │   └── Layout.tsx     # Main layout component
+│   │   ├── Layout.tsx     # Main layout component
+│   │   └── MarkdownRenderer.tsx  # Markdown renderer for formatted display
 │   ├── pages/             # Pages
 │   │   ├── KnowledgebaseSearch.tsx  # Knowledge base search page
 │   │   ├── CustomerDiscovery.tsx    # Customer discovery page

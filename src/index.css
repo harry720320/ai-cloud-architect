@@ -28,3 +28,74 @@ body {
   min-height: 100vh;
 }
 
+/* Markdown content styles */
+.markdown-content {
+  line-height: 1.6;
+}
+
+.markdown-content pre {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.markdown-content pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.875rem;
+}
+
+.markdown-content code {
+  background-color: #f3f4f6;
+  color: #dc2626;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.markdown-content pre code {
+  background-color: transparent;
+  color: #d4d4d4;
+  padding: 0;
+}
+
+/* Code block syntax highlighting */
+.markdown-content .hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1rem;
+  background: #1e1e1e;
+  color: #d4d4d4;
+}
+
+.markdown-content .hljs-keyword {
+  color: #569cd6;
+}
+
+.markdown-content .hljs-string {
+  color: #ce9178;
+}
+
+.markdown-content .hljs-comment {
+  color: #6a9955;
+  font-style: italic;
+}
+
+.markdown-content .hljs-number {
+  color: #b5cea8;
+}
+
+.markdown-content .hljs-function {
+  color: #dcdcaa;
+}
+
+.markdown-content .hljs-title {
+  color: #dcdcaa;
+}
+

@@ -6,6 +6,11 @@
 npm install
 ```
 
+**Note**: This will install all frontend dependencies including:
+- React, TypeScript, Vite, Tailwind CSS
+- Markdown rendering libraries (react-markdown, remark-gfm, rehype-highlight, highlight.js)
+- All other required dependencies
+
 ## 2. Install Backend Dependencies
 
 ```bash
@@ -97,7 +102,7 @@ Repeat to add all required mappings, for example:
 
 1. Select question category on the home page
 2. Enter your question
-3. View AI responses
+3. View AI responses with formatted Markdown display (headings, lists, code blocks, tables, links)
 
 ### Customer Discovery
 
@@ -106,14 +111,14 @@ Repeat to add all required mappings, for example:
 3. Select product type
 4. Fill in answers for all discovery questions
 5. Click "Generate Answers" to generate answers for all questions, or click individual "Generate" buttons for specific questions
-6. View detailed suggestions generated based on your answers
+6. View detailed suggestions generated based on your answers with formatted Markdown display (headings, lists, code blocks, tables, links)
 7. Save discovery results and export answers separately
 
 ### Discovery Results
 
 1. Navigate to the "Discovery Results" page
 2. View all historical discovery results
-3. Click "View" to see detailed results
+3. Click "View" to see detailed results with formatted Markdown display
 4. Click "Delete" to remove results
 5. Click "Answers" or "Generated" to export results as JSON files
 

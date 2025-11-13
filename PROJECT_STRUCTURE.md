@@ -10,7 +10,8 @@ An AI Cloud Architect application based on AnythingLLM - providing intelligent k
 cloud-architect-on-anythingllm/
 ├── src/
 │   ├── components/              # React Components
-│   │   └── Layout.tsx           # Main layout component (navigation bar)
+│   │   ├── Layout.tsx           # Main layout component (navigation bar)
+│   │   └── MarkdownRenderer.tsx # Markdown renderer for formatted AI responses
 │   ├── pages/                   # Page Components
 │   │   ├── KnowledgebaseSearch.tsx    # Knowledge base search page
 │   │   ├── CustomerDiscovery.tsx      # Customer discovery page
@@ -77,6 +78,7 @@ cloud-architect-on-anythingllm/
 - Automatically route to corresponding AnythingLLM workspace
 - Chat and search with specific knowledge bases
 - Real-time AI response display
+- **Formatted display**: AI responses rendered with Markdown formatting (headings, lists, code blocks, tables, links)
 
 **Key Characteristics**:
 - Dynamic workspace selection
@@ -93,6 +95,7 @@ cloud-architect-on-anythingllm/
 - Collect customer answers
 - Automatically search corresponding workspace based on each question's category
 - Generate detailed recommendations for each question
+- **Formatted display**: Generated answers rendered with Markdown formatting (headings, lists, code blocks, tables, links)
 
 **Key Characteristics**:
 - Dynamic question lists
@@ -157,6 +160,9 @@ cloud-architect-on-anythingllm/
 - Responsive design
 - Custom color scheme (primary blue palette)
 - Lucide React icon library
+- **Markdown rendering**: react-markdown with GitHub Flavored Markdown support
+- **Code syntax highlighting**: rehype-highlight with highlight.js
+- Formatted display for AI responses (headings, lists, code blocks, tables, links)
 
 ### Type Safety
 - Complete TypeScript type definitions
